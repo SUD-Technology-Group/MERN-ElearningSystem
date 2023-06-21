@@ -14,7 +14,8 @@ const User = new Schema({
     username: { type: String, required: true },
     password: { type: String, required: true },
     role: { type: String, required: true },
-    info: { type: Object }
+    info: { type: Object },
+    
 },
 {
     timestamps: true

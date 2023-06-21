@@ -1,10 +1,10 @@
 const router = require('express').Router();
-const { User } = require('../models');
+require('dotenv').config();
+const { User, OTP } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
+const RegisterCode = require('../models/RegisterCode');
 const secretKey = 'sudtechnology';
-
 const authenticateJWT = (req, res, next) => {
     const token = req.headers.authorization;
   
@@ -28,13 +28,13 @@ const authenticateJWT = (req, res, next) => {
     }
 }
 
+const accountSid = process.env.ACCOUNT_SID || '';
+const authToken = process.env.AUTH_TOKEN || '';
+const twilio_phone = '+12179552595';
+const client = require('twilio')(accountSid, authToken);
+
 router.get('/', (req, res, next) => {
     return res.json({result: 'pass'});
-})
-
-router.get('/getUser/:id', (req, res, next) => {
-    const { id } = req.params;
-    return res.json({id, user: 'Kuo Nhan Dung'})
 })
 
 
@@ -43,6 +43,13 @@ router.post('/register', async (req, res, next) => {
 
     if(!register_code) {
         return res.status(300).json({success: false, msg: 'Vui lòng nhập mã xác thực'});
+
+    }
+
+    let code = await RegisterCode.findOne({code: register_code})
+
+    if(!code) {
+        return res.status(300).json({success: false, msg: 'Mã xác thực không tồn tại'});
     }
 
     let user = await User.findOne({username})
@@ -101,6 +108,32 @@ router.post('/login', async (req, res, next) => {
             message: 'Đăng nhập thành công',
             token: token,
         });
+    });
+})
+
+
+/* 
+    Số điện thoại bắt đầu = +84
+    Sample: +84767916592
+    Vì là tài khoản Trial nên tạm thời chỉ test được bằng số dt của anh.
+    Có thể test trên postman để xem kết quả
+*/
+router.post('/send-OTP', async (req, res, next) => {
+    const { uid, phone } = req.body;
+    const code = Math.floor(1000 + Math.random() * 900000);
+
+    client.messages.create({
+        body: '' + code,
+        from: twilio_phone,  // Số điện thoại đã xác minh trên Twilio
+        to: phone  // Số điện thoại nhận SMS
+    })
+    .then(message => {
+        try {
+            new OTP({code: code, user: uid}).save();
+            return res.json({success: true, msg: message});    
+        } catch (error) {
+            return res.json({success: false, msg: 'Gửi OTP thất bại'});
+        }
     });
 })
 
