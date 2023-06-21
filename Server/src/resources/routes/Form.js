@@ -2,10 +2,24 @@ const router = require('express').Router();
 require('dotenv').config();
 const { Form, User, Exam } = require('../models');
 
+
+
+/*
+    API Tìm bài thi bằng user_id
+    Method: [GET]
+    Params: uid
+    Output: Bài thi của 1 thí sinh bất kì
+*/
 router.get('/readForm/:uid', async (req, res, next) => {
     const { uid } = req.params;
 
-    let form = await Form.findOne({user: uid}).lean();
+    let form = await Form.findOne({user: uid})
+        .then(form => {
+            return form.lean();
+        })
+        .catch(err => {
+            return null
+        })
 
     if(!form) {
         return res.status(404).json({success: false, msg: 'Không tìm thấy bài làm'});
@@ -15,9 +29,16 @@ router.get('/readForm/:uid', async (req, res, next) => {
         return res.status(300).json({success: false, msg: 'Bài làm đã nộp'});
     }
 
-    return res.status(200).json({success: true, data: form, msg: 'Tìm thấy bài làm'});
+    return res.status(200).json({success: true, msg: 'Tìm thấy bài làm'});
 })
 
+
+/*
+    API bắt đầu thi của 1 học sinh ( Tạo form thi )
+    Method: [POST]
+    Body: uid, exam_id
+    Output: Khởi tạo 1 phiếu làm bài cho thí sinh
+*/
 router.post('/createForm', async (req, res, next) => {
     const { uid, exam_id } = req.body;
     
@@ -45,6 +66,11 @@ router.post('/createForm', async (req, res, next) => {
     }
 })
 
+/*
+    API cập nhật tiến trình làm bài của học sinh liên tục 
+    Method: [PUT]
+    Body: form_id, quiz_id, new_answer
+*/
 router.put('/updateForm', async (req, res, next) => {
     const { form_id, quiz_id, new_answer } = req.body;
 
@@ -68,6 +94,13 @@ router.put('/updateForm', async (req, res, next) => {
 
 })
 
+
+/*
+    API nộp bài thi ( Submit bài thi ) 
+    Method: [PUT]
+    Body: form_id
+    Output: Update trạng thái của bài thi -> submitted
+*/
 router.put('/submitForm', async (req, res, next) => {
     const { form_id } = req.body;
 
@@ -87,7 +120,13 @@ router.put('/submitForm', async (req, res, next) => {
     
 })
 
-router.put('/removeForm', async (req, res, next) => {
+
+/*
+    API hủy phiếu thi của học sinh
+    Method: [DELETE]
+    Body: form_id
+*/
+router.delete('/removeForm', async (req, res, next) => {
     const { form_id } = req.body;
 
     await Form.findByIdAndRemove(form_id)
