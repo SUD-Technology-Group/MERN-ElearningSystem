@@ -46,13 +46,25 @@ router.post('/register', async (req, res, next) => {
 
     }
 
-    let code = await RegisterCode.findOne({code: register_code})
+    let Rcode = await RegisterCode.findOne({code: register_code})
+        .then(Rcode => {
+            return Rcode.lean();
+        })
+        .catch(err => {
+            return null
+        })
 
-    if(!code) {
+    if(!Rcode) {
         return res.status(300).json({success: false, msg: 'Mã xác thực không tồn tại'});
     }
 
     let user = await User.findOne({username})
+        .then(user => {
+            return user.lean();
+        })
+        .catch(err => {
+            return null
+        })
     
     if(user){
         return res.status(300).json({success: false, msg: 'Tài khoản đã tồn tại'});
@@ -76,6 +88,12 @@ router.post('/register', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
     const { username, password } = req.body;
     let user = await User.findOne({username})
+        .then(user => {
+            return user.lean();
+        })
+        .catch(err => {
+            return null
+        })
     
     if(!user){
         return res.status(300).json({success: false, msg: 'Tài khoản không tồn tại'});

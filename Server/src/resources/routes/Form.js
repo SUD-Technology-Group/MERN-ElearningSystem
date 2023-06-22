@@ -3,7 +3,6 @@ require('dotenv').config();
 const { Form, User, Exam } = require('../models');
 
 
-
 /*
     API Tìm bài thi bằng user_id
     Method: [GET]
@@ -42,12 +41,26 @@ router.get('/readForm/:uid', async (req, res, next) => {
 router.post('/createForm', async (req, res, next) => {
     const { uid, exam_id } = req.body;
     
-    let user = await User.findById(uid);
+    let user = await User.findById(uid)
+        .then(user => {
+            return user.lean();
+        })
+        .catch(err => {
+            return null
+        })
+
     if(!user) {
         return res.status(404).json({success: false, msg: 'Không tìm thấy học sinh'});
     }
 
-    let exam = await Exam.findById(exam_id);
+    let exam = await Exam.findById(exam_id)
+        .then(exam => {
+            return exam.lean();
+        })
+        .catch(err => {
+            return null
+        })
+
     if(!exam) {
         return res.status(404).json({success: false, msg: 'Không tìm thấy cuộc thi'});
     }
@@ -56,6 +69,7 @@ router.post('/createForm', async (req, res, next) => {
     for (let i = 0; i < exam.quizzes.length; i++) {
         answers.set(exam.quizzes[i], null);
     }
+
     let form = new Form({user, exam, answers, status: 'On Progress'});
     
     try {
@@ -74,7 +88,13 @@ router.post('/createForm', async (req, res, next) => {
 router.put('/updateForm', async (req, res, next) => {
     const { form_id, quiz_id, new_answer } = req.body;
 
-    let form = await Form.findById(form_id);
+    let form = await Form.findById(form_id)
+        .then(form => {
+            return form.lean();
+        })
+        .catch(err => {
+            return null
+        })
     
     if(!form) {
         return res.status(404).json({success: false, msg: 'Không tìm thấy bài làm'});
@@ -104,7 +124,13 @@ router.put('/updateForm', async (req, res, next) => {
 router.put('/submitForm', async (req, res, next) => {
     const { form_id } = req.body;
 
-    let form = await Form.findById(form_id);
+    let form = await Form.findById(form_id)
+        .then(form => {
+            return form.lean();
+        })
+        .catch(err => {
+            return null
+        })
 
     if(!form) {
         return res.status(404).json({success: false, msg: 'Không tìm thấy bài thi'});
